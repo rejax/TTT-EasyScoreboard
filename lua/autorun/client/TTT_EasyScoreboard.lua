@@ -100,7 +100,7 @@ local function MakeBackground( sb )
 			oldPaint(s)
 			local scr = sb.ply_frame.scroll.Enabled and 16 or 0
 			local sizeoff = EZS.BackgroundSize - 50
-			local offset = ( ( s:GetWide() - scr ) - multis[EZS.RankPos] - sizeoff )
+			local offset = ( ( s:GetWide() - scr ) - ( multis[EZS.RankPos] - EZS.RankOffset ) - sizeoff )
 			surface.SetDrawColor( 0, 0, 0, 80 )
 			surface.DrawRect( offset, 0, EZS.BackgroundSize + sizeoff, s:GetTall() )
 		end
