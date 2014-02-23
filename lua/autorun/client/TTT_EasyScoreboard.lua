@@ -154,9 +154,11 @@ hook.Add( "ScoreboardShow", "EasyScoreboard_Show", EZS_Do )
 
 local function AddNameColors( ply )
 	local userGroup = ply:GetNWString( "usergroup" )
-	if EZS.Colors[userGroup] and EZS.UseNameColors then
-		if EZS.Colors[userGroup] == "rainbow" then return color_white end
-		return EZS.Colors[userGroup]
-	else return color_white end
+	if EZS.UseNameColors then
+		if EZS.Colors[userGroup] then
+			if EZS.Colors[userGroup] == "rainbow" then return color_white end
+			return EZS.Colors[userGroup]
+		else return color_white end
+	end
 end
 hook.Add( "TTTScoreboardColorForPlayer", "EasyScoreboard_NameColors", AddNameColors )
