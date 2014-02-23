@@ -94,22 +94,6 @@ end
 local multis = { [5] = 275, [6] = 325, [7] = 375, [8] = 425, [9] = 475, [10] = 525, [11] = 575, [12] = 625, [13] = 675, [14] = 725,
 	[15] = 775, [16] = 825, [17] = 875, [18] = 925, [19] = 975, [20] = 1025 } -- because its like 3am and i dont even know how im still typing
 local function MakeBackground( sb )
-	--[[
-	local ugs = {}
-	for _, ply in pairs( player.GetAll() ) do
-		local us = ply:GetNWString( "usergroup" )
-		if EZS.Ranks[us] and not ugs[us] then ugs[us] = true end
-	end
-	
-	local widest = 0
-	surface.SetFont( "treb_small" )
-	for rank, str in pairs( EZS.Ranks ) do
-		if not ugs[rank] then continue end
-		local w = surface.GetTextSize( str )
-		if w > widest then widest = w end
-	end
-	if widest == 0 then return end
-	]]
 	for _, sb_team in ipairs( sb.ply_groups ) do
 		local oldPaint = sb_team.Paint
 		sb_team.Paint = function( s, w, h )
