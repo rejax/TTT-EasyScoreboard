@@ -5,7 +5,7 @@ EZS.Ranks = {}
 --[[ CONFIG ]]--
 EZS.Enabled = true
 
-EZS.Colors["superadmin"] = Color( 255, 222, 0 ) -- the color for a rank
+EZS.Colors["superadmin"] = Color( 255, 222, 0 ) -- the color for a rank (use "rainbow" to denote rainbow name)
 EZS.Colors["admin"] = Color( 200, 0, 0 )
 
 EZS.Ranks["superadmin"] = "S. Admin" -- the display name for a rank
@@ -16,10 +16,12 @@ EZS.RankOffset = 0 -- the offset of the rank (negative is left)
 EZS.CreateRankLabel = { enabled = true, text = "Rank" } -- label enable on the top? what should it say?
 
 EZS.UseNameColors = true -- should we color the names?
+EZS.RainbowFrequency = .5 -- frequency of rainbow (if enabled) (higher is faster)
 
-EZS.DrawBackground = false -- draw black bar behind?
+EZS.DrawBackground = true -- draw black bar behind?
 EZS.BackgroundSize = 50 -- other columns are 50
 
+EZS.MoveTag = { enabled = false, amount = 100 } -- Move the tags (missing,suspect,etc), by what amount?
 --[[ END CONFIG ]]--
 
 local function MakeLabel( sb, text )
@@ -44,11 +46,20 @@ local function MakeLabel( sb, text )
 	end
 end
 
+local function rainbow()
+	local frequency, time = EZS.RainbowFrequency, RealTime()
+	local red = math.sin( frequency * time ) * 127 + 128
+	local green = math.sin( frequency * time + 2 ) * 127 + 128
+	local blue = math.sin( frequency * time + 4 ) * 127 + 128
+	return Color( red, green, blue )
+end
+
 local function MakeRankText( sb, ply )
 	local userGroup = ply:GetNWString( "usergroup" )
 	local rankName = EZS.Ranks[userGroup]
 	local rankColor = EZS.Colors[userGroup] or color_white
 	local rankPos = EZS.RankPos
+	if rankColor == "rainbow" then rankColor = rainbow() end
 	
 	for i = 1, rankPos-1 do
 		if ValidPanel(sb.cols[i]) then continue end
@@ -68,6 +79,15 @@ local function MakeRankText( sb, ply )
 		self.cols[rankPos]:SetFont("treb_small")
 	end
 	
+	if EZS.Colors[userGroup] == "rainbow" then
+		sb.Think = function(s)
+			s.cols[rankPos]:SetTextColor( rainbow() )
+			if EZS.UseNameColors then
+				s.nick:SetTextColor( rainbow() )
+			end
+		end
+	end
+	
 	if EZS.RankOffset == 0 then return end
 	local LayoutCols = sb.LayoutColumns
 	sb.LayoutColumns = function(s)
@@ -81,18 +101,30 @@ local function MakeRankText( sb, ply )
 	end
 end
 
+local function MoveTag( row, amt )
+	if not row.tag then return end
+	
+	local oldLC = row.LayoutColumns
+	row.LayoutColumns = function(s)
+		oldLC(s)
+		local oldx, oldy = s.tag:GetPos()
+		s.tag:SetPos( oldx - amt, oldy )
+	end
+end
+
 local function DoRankLabel( sb )
 	for _, ply_group in ipairs( sb.ply_groups ) do
 		for ply, row in pairs( ply_group.rows ) do
 			if EZS.Ranks[ply:GetNWString("usergroup")] then
 				MakeRankText( row, ply )
 			end
+			if EZS.MoveTag.enabled then MoveTag( row, EZS.MoveTag.amount ) end
 		end
 	end
 end
 
 local multis = { [5] = 275, [6] = 325, [7] = 375, [8] = 425, [9] = 475, [10] = 525, [11] = 575, [12] = 625, [13] = 675, [14] = 725,
-	[15] = 775, [16] = 825, [17] = 875, [18] = 925, [19] = 975, [20] = 1025 } -- because its like 3am and i dont even know how im still typing
+	[15] = 775, [16] = 825, [17] = 875, [18] = 925, [19] = 975, [20] = 1025 } -- because ttt
 local function MakeBackground( sb )
 	for _, sb_team in ipairs( sb.ply_groups ) do
 		local oldPaint = sb_team.Paint
@@ -114,8 +146,8 @@ local function EZS_Do()
 	
 	local sb_main = GAMEMODE:GetScoreboardPanel()
 	
-	if EZS.CreateRankLabel.enabled then MakeLabel( sb_main, EZS.CreateRankLabel.text ) end
 	DoRankLabel( sb_main )
+	if EZS.CreateRankLabel.enabled then MakeLabel( sb_main, EZS.CreateRankLabel.text ) end
 	if EZS.DrawBackground then MakeBackground( sb_main ) end
 end
 hook.Add( "ScoreboardShow", "EasyScoreboard_Show", EZS_Do )
@@ -123,6 +155,7 @@ hook.Add( "ScoreboardShow", "EasyScoreboard_Show", EZS_Do )
 local function AddNameColors( ply )
 	local userGroup = ply:GetNWString( "usergroup" )
 	if EZS.Colors[userGroup] and EZS.UseNameColors then
+		if EZS.Colors[userGroup] == "rainbow" then return color_white end
 		return EZS.Colors[userGroup]
 	else return color_white end
 end
