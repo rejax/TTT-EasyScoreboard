@@ -22,7 +22,6 @@ EZS.DrawBackground = true -- draw black bar behind?
 EZS.BackgroundSize = 50 -- other columns are 50
 
 EZS.MoveTag = { enabled = false, amount = 100 } -- Move the tags (missing,suspect,etc), by what amount?
-EZS.MoveSearchResult = { enabled = false, amount = 100 }
 --[[ END CONFIG ]]--
 
 local function MakeLabel( sb, text )
@@ -88,27 +87,38 @@ local function MakeRankText( sb, ply )
 			end
 		end
 	end
+	
+	if EZS.RankOffset == 0 then return end
+	local LayoutCols = sb.LayoutColumns
+	sb.LayoutColumns = function(s)
+		LayoutCols(s)
+		for p, panel in pairs( s.cols ) do
+			if p == EZS.RankPos then
+				local x,y = panel:GetPos()
+				panel:SetPos( x + EZS.RankOffset, y )
+			end
+		end
+	end
 end
 
-local function MoveStuff( row )
+local function MoveTag( row, amt )
+	if not row.tag then return end
+	
 	local oldLC = row.LayoutColumns
 	row.LayoutColumns = function(s)
 		oldLC(s)
-		if EZS.MoveTag.enabled and s.tag then
-			local oldx, oldy = s.tag:GetPos()
-			s.tag:SetPos( oldx - EZS.MoveTag.amount, oldy )
-		end
-		if EZS.MoveSearchResult.enabled and s.sresult then
-			local oldx, oldy = s.sresult:GetPos()
-			s.sresult:SetPos( oldx - EZS.MoveSearchResult.amount, oldy )
-		end
-		if EZS.RankOffset ~= 0 then
-			for p, panel in pairs( s.cols ) do
-				if p == EZS.RankPos then
-					local x,y = panel:GetPos()
-					panel:SetPos( x + EZS.RankOffset, y )
-				end
+		local oldx, oldy = s.tag:GetPos()
+		s.tag:SetPos( oldx - amt, oldy )
+	end
+end
+
+local function DoRankLabel( sb )
+	for _, ply_group in ipairs( sb.ply_groups ) do
+		for ply, row in pairs( ply_group.rows ) do
+			if EZS.Ranks[ply:GetNWString("usergroup")] then
+				MakeRankText( row, ply )
 			end
+			if EZS.MoveTag.enabled then MoveTag( row, EZS.MoveTag.amount ) end
 		end
 	end
 end
@@ -125,17 +135,6 @@ local function MakeBackground( sb )
 			local offset = ( ( s:GetWide() - scr ) - ( multis[EZS.RankPos] - EZS.RankOffset ) - sizeoff )
 			surface.SetDrawColor( 0, 0, 0, 80 )
 			surface.DrawRect( offset, 0, EZS.BackgroundSize + sizeoff, s:GetTall() )
-		end
-	end
-end
-
-local function DoRankLabel( sb )
-	for _, ply_group in ipairs( sb.ply_groups ) do
-		for ply, row in pairs( ply_group.rows ) do
-			if EZS.Ranks[ply:GetNWString("usergroup")] then
-				MakeRankText( row, ply )
-			end
-			MoveStuff( row )
 		end
 	end
 end
