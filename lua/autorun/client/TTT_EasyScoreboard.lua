@@ -27,7 +27,11 @@ EZS.MoveSearchResult = { enabled = false, amount = 100 }
 
 local function MakeLabel( sb, text )
 	for i = 1, EZS.RankPos do
-		if ValidPanel(sb.cols[i]) then continue end
+		if ValidPanel(sb.cols[i]) then
+			if KARMA.IsEnabled() then continue end
+			if sb.cols[i]:GetText() ~= LANG.GetTranslation( "sb_karma" ) then continue end
+		end
+		
 		sb.cols[i] = vgui.Create( "DLabel", sb )
 		sb.cols[i]:SetText("")
 	end
@@ -63,10 +67,17 @@ local function MakeRankText( sb, ply )
 	if rankColor == "rainbow" then rankColor = rainbow() end
 	
 	for i = 1, rankPos-1 do
-		if ValidPanel(sb.cols[i]) then continue end
+		if ValidPanel(sb.cols[i]) then
+			if KARMA.IsEnabled() then continue end
+			if i ~= 4 then continue end
+			sb.cols[4]:Remove()
+			table.remove( sb.cols, 4 )
+		end
+		
 		sb.cols[i] = vgui.Create( "DLabel", sb )
 		sb.cols[i]:SetText("")
 	end
+	
 	sb.cols[rankPos] = vgui.Create( "DLabel", sb )
 	sb.cols[rankPos]:SetText( rankName )
 	sb.cols[rankPos]:SetTextColor( rankColor )
