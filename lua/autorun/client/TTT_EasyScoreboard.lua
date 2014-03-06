@@ -124,7 +124,7 @@ local function MoveStuff( row )
 	end
 end
 
-local multis = { [5] = 275, [6] = 325, [7] = 375, [8] = 425, [9] = 475, [10] = 525, [11] = 575, [12] = 625, [13] = 675, [14] = 725,
+local multis = { [4] = 225, [5] = 275, [6] = 325, [7] = 375, [8] = 425, [9] = 475, [10] = 525, [11] = 575, [12] = 625, [13] = 675, [14] = 725,
 	[15] = 775, [16] = 825, [17] = 875, [18] = 925, [19] = 975, [20] = 1025 } -- because ttt
 local function MakeBackground( sb )
 	for _, sb_team in ipairs( sb.ply_groups ) do
