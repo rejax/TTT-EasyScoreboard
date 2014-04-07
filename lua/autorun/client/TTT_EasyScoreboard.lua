@@ -10,25 +10,31 @@ EZS.Ranks["donator"] = { name = "Donator", color = Color( 100, 200, 100 ), admin
 
 EZS.CreateRankLabel = { enabled = true, text = "Rank" } -- label enable on the top? what should it say?
 
+EZS.HideBackground = false
+EZS.ShiftLeft = 0
+
 EZS.UseNameColors = true -- should we color the names?
 EZS.RainbowFrequency = .5 -- frequency of rainbow (if enabled)
 
-EZS.RightClickFunction = { enabled = true, functions = {
+EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
 		["User Functions"] = {
 			["Show Profile"] = function( ply )
 				ply:ShowProfile()
+			end,
+			["Copy SteamID"] = function( ply )
+				SetClipboardText( ply:SteamID() )
+				chat.AddText( color_white, ply:Nick() .. "'s SteamID (", Color( 200, 200, 200 ), ply:SteamID(), color_white, ") copied to clipboard!" )
 			end,
 			
 			_icon = "icon16/group.png",
 		},
 		["Admin Functions"]	= {
 			["Kick"] = { func = function( ply )
-				RunConsoleCommand( "ulx", "kick", ply:Nick():gsub( ";", "" ) ) -- change this to whatever
+				RunConsoleCommand( "ulx", "kick", ply:Nick():gsub( ";", "" ) )
 			end, icon = "icon16/user_delete.png" },
 			["Slay"] = { func = function( ply )
 				RunConsoleCommand( "ulx", "slay", ply:Nick():gsub( ";", "" ) )
 			end, icon = "icon16/pill.png" },
-			
 			_icon = "icon16/shield.png",
 		}
 	}
@@ -64,9 +70,13 @@ local function AddRankLabel( sb )
 		end
 	end
 	
+	if EZS.HideBackground and KARMA.IsEnabled() then
+		sb:AddColumn( "", function() return "" end, 0 )
+	end
+	
 	sb:AddColumn( heading, function( ply, label )
-		local key = ply:GetUserGroup()
-		if not EZS.Ranks[key] then key = ply:SteamID() end
+		local key = ply:SteamID()
+		if not EZS.Ranks[key] then key = ply:GetUserGroup() end
 		local rank = EZS.Ranks[key]
 		if not rank then return "" end
 		
@@ -86,17 +96,48 @@ local function AddRankLabel( sb )
 			local px, py = label:GetPos()
 			label:SetPos( px - rank.offset, py )
 		end
-			
+		
+		label:SetName( "EZS" )
 		return rank.name
 	end )
 	
+	if EZS.ShiftLeft < 1 then return end
+	
+	local function ShiftLeft( parent )
+		local k = EZS.HideBackground and 6 or 5
+		local p = parent.cols[k]
+		
+		if not p then return end
+		
+		local shift = EZS.HideBackground and 1 or 0
+		local karma = KARMA.IsEnabled() and 0 or 1
+		local left = ( 5 - karma ) - EZS.ShiftLeft
+		local posx, posy = p:GetPos()
+		local mod = ( 50 * ( ( left + shift ) - #parent.cols ) )
+		
+		p:SetPos( posx + mod, posy )
+	end
+	
+	if sb.ply_groups then -- sb_main
+		local OldPerformLayout = sb.PerformLayout
+		sb.PerformLayout = function( s )
+			OldPerformLayout( s )
+			ShiftLeft( s )
+		end
+	else -- sb_row
+		local OldLayoutColumns = sb.LayoutColumns
+		sb.LayoutColumns = function( s )
+			OldLayoutColumns( s )
+			ShiftLeft( s )
+		end
+	end
 end
 hook.Add( "TTTScoreboardColumns", "EasyScoreboard_Columns", AddRankLabel )
 
 local function AddNameColors( ply )
 	if EZS.UseNameColors then
-	local col = EZS.Ranks[ply:GetUserGroup()]
-	if not col then col = EZS.Ranks[ply:SteamID()] end
+	local col = EZS.Ranks[ply:SteamID()]
+	if not col then col = EZS.Ranks[ply:GetUserGroup()] end
 	
 		if col and col.color then
 			if col.color == "rainbow" then return rainbow() end
@@ -111,6 +152,7 @@ local function AddMenu( menu )
 	if not RCF.enabled then return nil end
 	
 	local rank = EZS.Ranks[LocalPlayer():GetUserGroup()]
+	local ply = menu.Player
 	
 	for permission, funcs in pairs( RCF.functions ) do
 		if permission == "Admin Functions" then
@@ -127,14 +169,25 @@ local function AddMenu( menu )
 		for name, f in pairs( funcs ) do
 			if name == "_icon" then perm:SetIcon( f ) continue end
 			
-			local o = menu:AddOption( name )
+			local option = menu:AddOption( name )
 			if istable( f ) then
-				o.DoClick = function() f.func( menu.Player ) end
-				o:SetIcon( f.icon )
+				option.DoClick = function()
+					if not IsValid( ply ) then return end
+					if RCF.ask_admins then
+						Derma_Query( "Execute '" .. name .. "' on player " .. ply:Nick() .. "?", "Admin Command",
+						"Yes", function() f.func( ply ) end,
+						"No", function() end ) 
+					else
+						f.func( ply )
+					end
+				end
+				option:SetIcon( f.icon )
 			else
-				o.DoClick = function() f( menu.Player ) end
+				option.DoClick = function() f( ply ) end
 			end
 		end
 	end
 end
 hook.Add( "TTTScoreboardMenu", "EasyScoreboard_Menu", AddMenu )
+
+concommand.Add( "ezs_refreshscoreboard", function() GAMEMODE:ScoreboardCreate() end )
