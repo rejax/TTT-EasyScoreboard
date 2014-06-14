@@ -78,6 +78,8 @@ local function AddRankLabel( sb )
 		local key = ply:SteamID()
 		if not EZS.Ranks[key] then key = ply:GetUserGroup() end
 		local rank = EZS.Ranks[key]
+		
+		if not rank then rank = ply.EZS_ScoreboardTag end
 		if not rank then return "" end
 		
 		if rank.color ~= "rainbow" then
