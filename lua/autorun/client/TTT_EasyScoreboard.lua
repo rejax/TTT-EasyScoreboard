@@ -41,6 +41,11 @@ EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
 }
 --[[ END CONFIG ]]--
 
+local function RealUserGroup( ply )
+	if ply.EV_GetRank then return ply:EV_GetRank() end
+	return ply:GetUserGroup()
+end
+
 local function rainbow()
 	local frequency, time = EZS.RainbowFrequency, RealTime()
 	local red = math.sin( frequency * time ) * 127 + 128
@@ -76,7 +81,7 @@ local function AddRankLabel( sb )
 	
 	sb:AddColumn( heading, function( ply, label )
 		local key = ply:SteamID()
-		if not EZS.Ranks[key] then key = ply:GetUserGroup() end
+		if not EZS.Ranks[key] then key = RealUserGroup( ply ) end
 		local rank = EZS.Ranks[key]
 		
 		if not rank then rank = ply.EZS_ScoreboardTag end
@@ -139,7 +144,7 @@ hook.Add( "TTTScoreboardColumns", "EasyScoreboard_Columns", AddRankLabel )
 local function AddNameColors( ply )
 	if EZS.UseNameColors then
 	local col = EZS.Ranks[ply:SteamID()]
-	if not col then col = EZS.Ranks[ply:GetUserGroup()] end
+	if not col then col = EZS.Ranks[RealUserGroup( ply )] end
 	
 		if col and col.color then
 			if col.color == "rainbow" then return rainbow() end
@@ -153,7 +158,7 @@ local function AddMenu( menu )
 	local RCF = EZS.RightClickFunction
 	if not RCF.enabled then return nil end
 	
-	local rank = EZS.Ranks[LocalPlayer():GetUserGroup()]
+	local rank = EZS.Ranks[RealUserGroup( LocalPlayer() )]
 	local ply = menu.Player
 	
 	for permission, funcs in pairs( RCF.functions ) do
