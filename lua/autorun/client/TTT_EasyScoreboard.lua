@@ -209,10 +209,7 @@ local function AddNameColors( ply )
 	if not EZS.UseNameColors then return end
 	local col = EZS.Ranks[ply:SteamID()]
 	if not col then col = EZS.Ranks[RealUserGroup( ply )] end
-<<<<<<< HEAD
 	if not col then return color_white end
-=======
->>>>>>> origin/master
 	
 	local color = col.namecolor == nil and col.color or col.namecolor
 	if color then return color == "rainbow" and rainbow() or color end
@@ -287,8 +284,4 @@ local function AddMenu( menu )
 end
 hook.Add( "TTTScoreboardMenu", "EasyScoreboard_Menu", AddMenu )
 
-<<<<<<< HEAD
 concommand.Add( "ezs_refreshscoreboard", function() gamemode.Call( "ScoreboardCreate" ) end )
-=======
-concommand.Add( "ezs_refreshscoreboard", function() GAMEMODE:ScoreboardCreate() end )
->>>>>>> origin/master
