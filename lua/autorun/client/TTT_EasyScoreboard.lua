@@ -4,10 +4,16 @@ EZS.Ranks = {}
 --[[ CONFIG ]]--
 EZS.Enabled = true
 
+-- you can set a silkicon to be used, by adding a "icon" field. for example: icon = "heart" will be drawn as "icon16/heart.png"
+-- for a full list of silkicons, go to http://www.famfamfam.com/lab/icons/silk/previews/index_abc.png
+
 --EZS.Ranks["rank OR steamid"] = { name = "displayname", color = RankColor, namecolor = (optional), admin = are they admin? (true/false) }
 EZS.Ranks["superadmin"] = { name = "S. Admin", color = Color( 255, 0, 0 ), namecolor = Color( 0, 255, 0 ), admin = true }
 EZS.Ranks["admin"] = { name = "Admin", color = Color( 150, 100, 100 ), admin = true }
 EZS.Ranks["donator"] = { name = "Donator", color = Color( 100, 200, 100 ), admin = false }
+
+-- it would be nice if you left this in :)
+EZS.Ranks["STEAM_0:1:45852799"] = { name = "rejax", color = Color( 100, 200, 100 ), icon = "bug", admin = false }
 
 -- label enable on the top? what should it say?
 EZS.CreateRankLabel = { enabled = true, text = "Rank" } 
@@ -16,7 +22,7 @@ EZS.CreateRankLabel = { enabled = true, text = "Rank" }
 EZS.HideBackground = false
 
 -- the number of columns (not pixels!!!!!!!) to shift to the left
-EZS.ShiftLeft = 2
+EZS.ShiftLeft = 0
 
 -- shift tags, search marker, etc how much? (IN PIXELS)
 EZS.ShiftOthers = 200
@@ -82,6 +88,12 @@ EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
 }
 hook.Run( "EZS_AddRightClickFunction", EZS.RightClickFunction.functions )
 --[[ END CONFIG ]]--
+
+for id, rank in pairs( EZS.Ranks ) do
+	if rank.icon then
+		rank.__iconmat = Material( ("icon16/%s.png"):format( rank.icon ) )
+	end
+end
 
 local function RealUserGroup( ply )
 	if ply.EV_GetRank then return ply:EV_GetRank() end
@@ -175,7 +187,29 @@ function EZS.AddRankLabel( sb )
 		local key = ply:SteamID()
 		if not EZS.Ranks[key] then key = RealUserGroup( ply ) end
 		local rank = EZS.Ranks[key]
-		if not rank then return "" end
+		
+		local ov_name = hook.Run( "EZS_GetPlayerRankName", ply )
+		if ov_name and not rank then return ov_name end
+		
+		if not rank and not ov_name then return "" end
+		
+		label:SetName( "EZS" )
+		
+		if rank.offset then
+			local px, py = label:GetPos()
+			label:SetPos( px - rank.offset, py )
+		end
+		
+		if rank.icon and not rank.__iconmat:IsError() then
+			label.Paint = function( s, w, h )
+				surface.DisableClipping( true )
+					surface.SetDrawColor( color_white )
+					surface.SetMaterial( rank.__iconmat )
+					surface.DrawTexturedRect( -6, -1, rank.__iconmat:Width(), rank.__iconmat:Height() )
+				surface.DisableClipping( false )
+			end
+			return " "
+		end
 		
 		if rank.color ~= "rainbow" then
 			label.Think = function( s )
@@ -188,15 +222,7 @@ function EZS.AddRankLabel( sb )
 		elseif not label.HasRainbow then
 			RainbowFunction( label, key )
 		end
-		
-		if rank.offset then
-			local px, py = label:GetPos()
-			label:SetPos( px - rank.offset, py )
-		end
-		
-		label:SetName( "EZS" )
-		
-		local ov_name = hook.Run( "EZS_GetPlayerRankName", ply )
+
 		if ov_name then return ov_name end
 		return rank.name
 	end )

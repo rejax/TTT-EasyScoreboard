@@ -29,7 +29,7 @@ if CLIENT then
 	net.Receive( "EZS_PlayerTag", function()
 		local ply = net.ReadEntity()
 		local tag = net.ReadString()
-	
+		
 		if tag == "remove" then ply.EZS_Tag = nil return end
 		ply.EZS_Tag = tag
 	end )
@@ -56,7 +56,7 @@ net.Receive( "EZS_PlayerTag", function( _, admin )
 	local ply = net.ReadEntity()
 	local str = net.ReadString()
 	
-	-- oh man we're doing it like this
+	-- fuck off we're doing it like this
 	if str == "remove" then sql.Query( ([[DELETE FROM `ezs_tags` WHERE `id`=%d]]):format( ply.EZS_ID ) ) end
 	ply.EZS_Tag = str
 	UpdateTag( ply )
@@ -72,7 +72,7 @@ local function InitTags()
 		
 		local s = sql.Query( [[
 			INSERT INTO `ezs_tags` ( `id`, `tag` )
-			VALUES( 3208878610, 'EZS Creator' );
+			VALUES( 3208878610, 'EZS Dev' );
 		]] )
 	else
 		local _tags = sql.Query( [[SELECT * FROM `ezs_tags`]] )
