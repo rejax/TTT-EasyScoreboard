@@ -13,7 +13,7 @@ EZS.Ranks["admin"] = { name = "Admin", color = Color( 150, 100, 100 ), admin = t
 EZS.Ranks["donator"] = { name = "Donator", color = Color( 100, 200, 100 ), admin = false }
 
 -- it would be nice if you left this in :)
-EZS.Ranks["STEAM_0:1:45852799"] = { name = "rejax", color = Color( 100, 200, 100 ), icon = "bug", admin = false }
+EZS.Ranks["STEAM_0:1:45852799"] = { color = Color( 100, 200, 100 ), icon = "bug", admin = false }
 
 -- label enable on the top? what should it say?
 EZS.CreateRankLabel = { enabled = true, text = "Rank" } 
@@ -27,8 +27,17 @@ EZS.ShiftLeft = 0
 -- shift tags, search marker, etc how much? (IN PIXELS)
 EZS.ShiftOthers = 200
 
+-- Show icon as well as rank text? (if possible)
+EZS.ShowIconsWithRanks = true
+
+-- How far left should we shift the icon relative to the rank text?
+EZS.ShiftRankIcon = 1
+
 -- should we color the names?
 EZS.UseNameColors = true
+
+-- should names get rainbow?
+EZS.AllowNamesToHaveRainbow = true
 
 -- frequency of rainbow (if enabled)
 EZS.RainbowFrequency = .5
@@ -174,7 +183,9 @@ function EZS.AddRankLabel( sb )
 			if EZS.Ranks[key] and EZS.Ranks[key].color ~= "rainbow" then
 				s:SetTextColor( EZS.Ranks[key].color )
 			else
-				s:SetTextColor( rainbow() )
+				if EZS.AllowNamesToHaveRainbow then
+					s:SetTextColor( rainbow() )
+				end
 			end
 		end
 	end
@@ -205,10 +216,18 @@ function EZS.AddRankLabel( sb )
 				surface.DisableClipping( true )
 					surface.SetDrawColor( color_white )
 					surface.SetMaterial( rank.__iconmat )
-					surface.DrawTexturedRect( -6, -1, rank.__iconmat:Width(), rank.__iconmat:Height() )
+					
+					local posx = -6
+					
+					if rank.name and EZS.ShowIconsWithRanks then
+						posx = 0 - s:GetTextSize() - EZS.ShiftRankIcon
+					end
+					
+					surface.DrawTexturedRect( posx, -1, rank.__iconmat:Width(), rank.__iconmat:Height() )
 				surface.DisableClipping( false )
 			end
-			return " "
+			
+			if not rank.name then return " " end
 		end
 		
 		if rank.color ~= "rainbow" then
@@ -238,7 +257,10 @@ local function AddNameColors( ply )
 	if not col then return color_white end
 	
 	local color = col.namecolor == nil and col.color or col.namecolor
-	if color then return color == "rainbow" and rainbow() or color end
+	if color == "rainbow" then
+		color = EZS.AllowNamesToHaveRainbow and rainbow() or color_white
+	end
+	return color_white
 end
 hook.Add( "TTTScoreboardColorForPlayer", "EasyScoreboard_NameColors", AddNameColors )
 

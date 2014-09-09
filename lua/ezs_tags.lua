@@ -1,3 +1,5 @@
+-- PLACE ME @ LUA/AUTORUN/ezs_tags.lua
+
 if CLIENT then
 	local function AddTags( funcs )
 		local afuncs = funcs["Admin Functions"]
