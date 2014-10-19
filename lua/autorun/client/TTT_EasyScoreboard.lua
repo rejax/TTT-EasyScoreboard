@@ -262,15 +262,15 @@ hook.Add( "TTTScoreboardColumns", "EZS_Columns", EZS.AddRankLabel )
 
 local function AddNameColors( ply )
 	if not EZS.UseNameColors then return end
-	local col = EZS.Ranks[ply:SteamID()]
-	if not col then col = EZS.Ranks[RealUserGroup( ply )] end
-	if not col then return color_white end
+	local col = EZS.Ranks[ply:SteamID()] or EZS.Ranks[RealUserGroup( ply )]
+	if not col then return end
 	
 	local color = col.namecolor == nil and col.color or col.namecolor
 	if color == "rainbow" then
 		color = EZS.AllowNamesToHaveRainbow and rainbow() or color_white
+	elseif color then
+		return color
 	end
-	return color_white
 end
 hook.Add( "TTTScoreboardColorForPlayer", "EasyScoreboard_NameColors", AddNameColors )
 
