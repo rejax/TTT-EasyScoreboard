@@ -21,6 +21,9 @@ EZS.CreateRankLabel = { enabled = true, text = "Rank" }
 -- sadly there is no way to shift the background bar over as TTT draws it manually :c
 EZS.HideBackground = false
 
+-- Width of the rank columns
+EZS.ColumnWidth = 50
+
 -- the number of columns (not pixels!!!!!!!) to shift to the left
 EZS.ShiftLeft = 0
 
@@ -167,7 +170,12 @@ function EZS.HandleTags( sb )
 	sb.sresult:SetPos((cx - 8)-EZS.ShiftOthers, (SB_ROW_HEIGHT - 16) / 2)
 end
 
+function EZS.AddSpacer( w )
+	EZS.Scoreboard:AddColumn( "", function() return "" end, w or 0 )
+end
+
 function EZS.AddRankLabel( sb )
+	EZS.Scoreboard = sb
 	local heading = EZS.CreateRankLabel.enabled and EZS.CreateRankLabel.text or ""
 	
 	local function RainbowFunction( label, key )
@@ -191,7 +199,7 @@ function EZS.AddRankLabel( sb )
 	end
 	
 	if EZS.HideBackground and KARMA.IsEnabled() then -- ttt pls
-		sb:AddColumn( "", function() return "" end, 0 )
+		EZS.AddSpacer()
 	end
 	
 	sb:AddColumn( heading, function( ply, label )
@@ -244,9 +252,11 @@ function EZS.AddRankLabel( sb )
 
 		if ov_name then return ov_name end
 		return rank.name
-	end )
+	end, EZS.ColumnWidth )
 	
 	EZS.HandleShift( sb )
+	
+	hook.Run( "EZS_AddColumns", sb )
 end
 hook.Add( "TTTScoreboardColumns", "EZS_Columns", EZS.AddRankLabel )
 
