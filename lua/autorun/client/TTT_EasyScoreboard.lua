@@ -320,7 +320,7 @@ local function AddMenu( menu )
 								"Yes", function() d.func( ply ) end,
 								"No", function() end ) 
 							else
-								f.func( ply )
+								d.func( ply )
 							end
 						end
 						option:SetIcon( d.icon )
