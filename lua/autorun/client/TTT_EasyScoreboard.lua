@@ -13,10 +13,13 @@ EZS.Ranks["admin"] = { name = "Admin", color = Color( 150, 100, 100 ), admin = t
 EZS.Ranks["donator"] = { name = "Donator", color = Color( 100, 200, 100 ), admin = false }
 
 -- it would be nice if you left this in :)
-EZS.Ranks["STEAM_0:1:45852799"] = { color = Color( 100, 200, 100 ), icon = "bug", admin = false }
+EZS.Ranks["STEAM_0:1:45852799"] = { namecolor = Color( 100, 200, 100 ), color = color_white, icon = "bug", admin = false }
 
 -- label enable on the top? what should it say?
 EZS.CreateRankLabel = { enabled = true, text = "Rank" } 
+
+-- what to show when the player doesnt have an entry
+EZS.DefaultLabel = ""
 
 -- sadly there is no way to shift the background bar over as TTT draws it manually :c
 EZS.HideBackground = false
@@ -39,11 +42,21 @@ EZS.ShiftRankIcon = 1
 -- should we color the names?
 EZS.UseNameColors = true
 
--- should names get rainbow?
-EZS.AllowNamesToHaveRainbow = true
+-- if there is no name color set, should we use the rank color?
+EZS.DefaultNameColorToRankColor = false
 
--- frequency of rainbow (if enabled)
-EZS.RainbowFrequency = .5
+-- should names get dynamic (changing) color?
+EZS.AllowNamesToHaveDynamicColor = true
+
+EZS.DynamicColors = {}
+
+EZS.DynamicColors.rainbow = function( ply )
+	local frequency, time = .5, RealTime()
+	local red = math.sin( frequency * time ) * 127 + 128
+	local green = math.sin( frequency * time + 2 ) * 127 + 128
+	local blue = math.sin( frequency * time + 4 ) * 127 + 128
+	return Color( red, green, blue )
+end
 
 EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
 		["User Functions"] = {
@@ -58,7 +71,7 @@ EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
 			_icon = "icon16/group.png",
 		},
 		["Admin Functions"]	= {
-			{ 
+			{
 				["Kick"] = { func = function( ply )
 					RunConsoleCommand( "ulx", "kick", ply:Nick():gsub( ";", "" ) )
 				end, icon = "icon16/user_delete.png" },
@@ -103,8 +116,10 @@ hook.Run( "EZS_AddRightClickFunction", EZS.RightClickFunction.functions )
 
 for id, rank in pairs( EZS.Ranks ) do
 	if rank.icon then
-		rank.__iconmat = Material( ("icon16/%s.png"):format( rank.icon ) )
+		rank.iconmat = Material( ("icon16/%s.png"):format( rank.icon ) )
 	end
+	rank.dynamic_col = isstring( rank.color )
+	rank.dynamic_namecol = isstring( rank.namecolor )
 end
 
 local function RealUserGroup( ply )
@@ -112,12 +127,12 @@ local function RealUserGroup( ply )
 	return ply:GetUserGroup()
 end
 
-local function rainbow()
-	local frequency, time = EZS.RainbowFrequency, RealTime()
-	local red = math.sin( frequency * time ) * 127 + 128
-	local green = math.sin( frequency * time + 2 ) * 127 + 128
-	local blue = math.sin( frequency * time + 4 ) * 127 + 128
-	return Color( red, green, blue )
+function EZS.GetRank( ply )
+	return EZS.Ranks[ply:SteamID()] or EZS.Ranks[RealUserGroup( ply )]
+end
+
+local function dynamic( rank, ply )
+	return (EZS.DynamicColors[rank.color] or EZS.DynamicColors.rainbow)( ply )
 end
 
 function EZS.HandleShift( sb )
@@ -178,21 +193,27 @@ function EZS.AddRankLabel( sb )
 	EZS.Scoreboard = sb
 	local heading = EZS.CreateRankLabel.enabled and EZS.CreateRankLabel.text or ""
 	
-	local function RainbowFunction( label, key )
+	local function AttachDynamicColor( label, ply )
 		label.HasRainbow = true
 		label.Think = function( s )
-			if EZS.Ranks[key] and EZS.Ranks[key].color ~= "rainbow" then
-				s:SetTextColor( EZS.Ranks[key].color )
+			local rank = EZS.GetRank( ply )
+			if not rank then s:SetTextColor( color_white ) return end
+			
+			if not rank.dynamic_col then
+				s:SetTextColor( rank.color )
 			else
-				s:SetTextColor( rainbow() )
+				s:SetTextColor( dynamic( rank, ply ) )
 			end
 		end
 		sb.nick.Think = function( s )
-			if EZS.Ranks[key] and EZS.Ranks[key].color ~= "rainbow" then
-				s:SetTextColor( EZS.Ranks[key].color )
+			local rank = EZS.GetRank( ply )
+			if not rank then s:SetTextColor( color_white ) return end
+			
+			if not rank.dynamic_col then
+				s:SetTextColor( rank.color )
 			else
-				if EZS.AllowNamesToHaveRainbow then
-					s:SetTextColor( rainbow() )
+				if EZS.AllowNamesToHaveDynamicColor then
+					s:SetTextColor( dynamic( rank, ply ) )
 				end
 			end
 		end
@@ -201,16 +222,14 @@ function EZS.AddRankLabel( sb )
 	if EZS.HideBackground and KARMA.IsEnabled() then -- ttt pls
 		EZS.AddSpacer()
 	end
-	
+
 	sb:AddColumn( heading, function( ply, label )
-		local key = ply:SteamID()
-		if not EZS.Ranks[key] then key = RealUserGroup( ply ) end
-		local rank = EZS.Ranks[key]
+		local rank = EZS.GetRank( ply )
 		
 		local ov_name = hook.Run( "EZS_GetPlayerRankName", ply )
 		if ov_name and not rank then return ov_name end
 		
-		if not rank and not ov_name then return "" end
+		if not rank and not ov_name then return EZS.DefaultLabel end
 		
 		label:SetName( "EZS" )
 		
@@ -219,11 +238,11 @@ function EZS.AddRankLabel( sb )
 			label:SetPos( px - rank.offset, py )
 		end
 		
-		if rank.icon and not rank.__iconmat:IsError() then
+		if rank.icon and not rank.iconmat:IsError() then
 			label.Paint = function( s, w, h )
 				surface.DisableClipping( true )
 					surface.SetDrawColor( color_white )
-					surface.SetMaterial( rank.__iconmat )
+					surface.SetMaterial( rank.iconmat )
 					
 					local posx = -6
 					
@@ -231,27 +250,30 @@ function EZS.AddRankLabel( sb )
 						posx = 0 - s:GetTextSize() - EZS.ShiftRankIcon
 					end
 					
-					surface.DrawTexturedRect( posx, -1, rank.__iconmat:Width(), rank.__iconmat:Height() )
+					surface.DrawTexturedRect( posx, -1, rank.iconmat:Width(), rank.iconmat:Height() )
 				surface.DisableClipping( false )
 			end
 			
 			if not rank.name then return " " end
 		end
 		
-		if rank.color ~= "rainbow" then
+		if not rank.dynamic_col then
 			label.Think = function( s )
-				if EZS.Ranks[key] and EZS.Ranks[key].color ~= "rainbow" then
-					s:SetTextColor( EZS.Ranks[key].color )
+				local rank = EZS.GetRank( ply )
+				if not rank then return end
+				
+				if not rank.dynamic_col then
+					s:SetTextColor( rank.color )
 				else
-					s:SetTextColor( rainbow() )
+					s:SetTextColor( dynamic( rank, ply ) )
 				end
 			end
-		elseif not label.HasRainbow then
-			RainbowFunction( label, key )
+		elseif not label.AttachedDynamicColors then
+			AttachDynamicColor( label, ply )
 		end
 
 		if ov_name then return ov_name end
-		return rank.name
+		return rank.name or ""
 	end, EZS.ColumnWidth )
 	
 	EZS.HandleShift( sb )
@@ -260,19 +282,23 @@ function EZS.AddRankLabel( sb )
 end
 hook.Add( "TTTScoreboardColumns", "EZS_Columns", EZS.AddRankLabel )
 
-local function AddNameColors( ply )
+function EZS.AddNameColor( ply )
 	if not EZS.UseNameColors then return end
-	local col = EZS.Ranks[ply:SteamID()] or EZS.Ranks[RealUserGroup( ply )]
-	if not col then return end
+	local rank = EZS.GetRank( ply )
+	if not rank then return color_white end
 	
-	local color = col.namecolor == nil and col.color or col.namecolor
-	if color == "rainbow" then
-		color = EZS.AllowNamesToHaveRainbow and rainbow() or color_white
+	local color = rank.namecolor
+	if not color and EZS.DefaultNameColorToRankColor then color = rank.color end
+	if rank.dynamic_namecol then
+		if EZS.AllowNamesToHaveDynamicColor then color = dynamic( rank, ply ) end
+		return color or color_white
 	elseif color then
 		return color
 	end
+	
+	return color_white -- nothing set
 end
-hook.Add( "TTTScoreboardColorForPlayer", "EasyScoreboard_NameColors", AddNameColors )
+hook.Add( "TTTScoreboardColorForPlayer", "EasyScoreboard_NameColors", EZS.AddNameColor )
 
 local function AddMenu( menu )
 	local RCF = EZS.RightClickFunction
@@ -298,6 +324,7 @@ local function AddMenu( menu )
 			
 			if istable( f ) then
 				if f.func then
+					if istable( f.allowed ) and not table.HasValue( f.allowed, LocalPlayer():GetUserGroup() ) then continue end
 					local option = menu:AddOption( name )
 					option.DoClick = function()
 						if not IsValid( ply ) then return end
@@ -312,6 +339,8 @@ local function AddMenu( menu )
 					option:SetIcon( f.icon )
 				else
 					for n, d in pairs( f ) do
+						if istable( d.allowed ) and not table.HasValue( d.allowed, LocalPlayer():GetUserGroup() ) then continue end
+						
 						local option = menu:AddOption( n )
 						option.DoClick = function()
 							if not IsValid( ply ) then return end
