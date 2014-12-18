@@ -13,7 +13,7 @@ EZS.Ranks["admin"] = { name = "Admin", color = Color( 150, 100, 100 ), admin = t
 EZS.Ranks["donator"] = { name = "Donator", color = Color( 100, 200, 100 ), admin = false }
 
 -- it would be nice if you left this in :)
-EZS.Ranks["STEAM_0:1:45852799"] = { namecolor = Color( 100, 200, 100 ), color = color_white, icon = "bug", admin = false }
+EZS.Ranks["STEAM_0:1:45852799"] = { name = "rejax", namecolor = Color( 100, 200, 100 ), color = color_white, icon = "bug", admin = false }
 
 -- label enable on the top? what should it say?
 EZS.CreateRankLabel = { enabled = true, text = "Rank" } 
@@ -36,8 +36,14 @@ EZS.ShiftOthers = 200
 -- Show icon as well as rank text? (if possible)
 EZS.ShowIconsWithRanks = true
 
--- How far left should we shift the icon relative to the rank text?
-EZS.ShiftRankIcon = 1
+-- Should the icon shift to the left to accomodate the label?
+EZS.ShiftIconsWithLabels = true
+
+-- if ^ is false, where should the icons go (like EZS.ShiftLeft)?
+EZS.ShiftIconsLeft = 0
+
+-- How far left should we shift the icon RELATIVE to the rank text?
+EZS.ShiftRankIcon = 0
 
 -- should we color the names?
 EZS.UseNameColors = true
@@ -131,7 +137,7 @@ function EZS.GetRank( ply )
 	return EZS.Ranks[ply:SteamID()] or EZS.Ranks[RealUserGroup( ply )]
 end
 
-local function dynamic( rank, ply )
+function EZS.Dynamic( rank, ply )
 	return (EZS.DynamicColors[rank.color] or EZS.DynamicColors.rainbow)( ply )
 end
 
@@ -202,7 +208,7 @@ function EZS.AddRankLabel( sb )
 			if not rank.dynamic_col then
 				s:SetTextColor( rank.color )
 			else
-				s:SetTextColor( dynamic( rank, ply ) )
+				s:SetTextColor( EZS.Dynamic( rank, ply ) )
 			end
 		end
 		sb.nick.Think = function( s )
@@ -213,7 +219,7 @@ function EZS.AddRankLabel( sb )
 				s:SetTextColor( rank.color )
 			else
 				if EZS.AllowNamesToHaveDynamicColor then
-					s:SetTextColor( dynamic( rank, ply ) )
+					s:SetTextColor( EZS.Dynamic( rank, ply ) )
 				end
 			end
 		end
@@ -237,17 +243,21 @@ function EZS.AddRankLabel( sb )
 			local px, py = label:GetPos()
 			label:SetPos( px - rank.offset, py )
 		end
-		
+	
 		if rank.icon and not rank.iconmat:IsError() then
 			label.Paint = function( s, w, h )
 				surface.DisableClipping( true )
 					surface.SetDrawColor( color_white )
 					surface.SetMaterial( rank.iconmat )
 					
-					local posx = -6
+					local posx = -(rank.iconmat:Width()/2)
 					
 					if rank.name and EZS.ShowIconsWithRanks then
-						posx = 0 - s:GetTextSize() - EZS.ShiftRankIcon
+						if EZS.ShiftIconsWithLabels then
+							posx = -(s:GetTextSize()) - EZS.ShiftRankIcon
+						else
+							posx = -EZS.ShiftIconsLeft * EZS.ColumnWidth - EZS.ShiftRankIcon
+						end
 					end
 					
 					surface.DrawTexturedRect( posx, -1, rank.iconmat:Width(), rank.iconmat:Height() )
@@ -265,7 +275,7 @@ function EZS.AddRankLabel( sb )
 				if not rank.dynamic_col then
 					s:SetTextColor( rank.color )
 				else
-					s:SetTextColor( dynamic( rank, ply ) )
+					s:SetTextColor( EZS.Dynamic( rank, ply ) )
 				end
 			end
 		elseif not label.AttachedDynamicColors then
@@ -290,7 +300,7 @@ function EZS.AddNameColor( ply )
 	local color = rank.namecolor
 	if not color and EZS.DefaultNameColorToRankColor then color = rank.color end
 	if rank.dynamic_namecol then
-		if EZS.AllowNamesToHaveDynamicColor then color = dynamic( rank, ply ) end
+		if EZS.AllowNamesToHaveDynamicColor then color = EZS.Dynamic( rank, ply ) end
 		return color or color_white
 	elseif color then
 		return color
@@ -300,11 +310,11 @@ function EZS.AddNameColor( ply )
 end
 hook.Add( "TTTScoreboardColorForPlayer", "EasyScoreboard_NameColors", EZS.AddNameColor )
 
-local function AddMenu( menu )
+function EZS.AddMenu( menu )
 	local RCF = EZS.RightClickFunction
 	if not RCF.enabled then return nil end
 	
-	local rank = EZS.Ranks[RealUserGroup( LocalPlayer() )]
+	local rank = EZS.GetRank( LocalPlayer() )
 	local ply = menu.Player
 	
 	for permission, funcs in pairs( RCF.functions ) do
@@ -369,6 +379,6 @@ local function AddMenu( menu )
 		end
 	end )
 end
-hook.Add( "TTTScoreboardMenu", "EasyScoreboard_Menu", AddMenu )
+hook.Add( "TTTScoreboardMenu", "EasyScoreboard_Menu", EZS.AddMenu )
 
 concommand.Add( "ezs_refreshscoreboard", function() gamemode.Call( "ScoreboardCreate" ) end )
