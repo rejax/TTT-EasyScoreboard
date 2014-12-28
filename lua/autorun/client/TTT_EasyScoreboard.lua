@@ -202,6 +202,7 @@ function EZS.AddRankLabel( sb )
 	local function AttachDynamicColor( label, ply )
 		label.HasRainbow = true
 		label.Think = function( s )
+			if not IsValid( ply ) then return end
 			local rank = EZS.GetRank( ply )
 			if not rank then s:SetTextColor( color_white ) return end
 			
@@ -212,6 +213,7 @@ function EZS.AddRankLabel( sb )
 			end
 		end
 		sb.nick.Think = function( s )
+			if not IsValid( ply ) then return end
 			local rank = EZS.GetRank( ply )
 			if not rank then s:SetTextColor( color_white ) return end
 			
@@ -269,6 +271,7 @@ function EZS.AddRankLabel( sb )
 		
 		if not rank.dynamic_col then
 			label.Think = function( s )
+				if not IsValid( ply ) then return end
 				local rank = EZS.GetRank( ply )
 				if not rank then return end
 				
