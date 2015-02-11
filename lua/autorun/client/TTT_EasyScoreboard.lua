@@ -304,12 +304,10 @@ function EZS.AddNameColor( ply )
 	if not color and EZS.DefaultNameColorToRankColor then color = rank.color end
 	if rank.dynamic_namecol then
 		if EZS.AllowNamesToHaveDynamicColor then color = EZS.Dynamic( rank, ply ) end
-		return color or color_white
-	elseif color then
+		return IsColor(color) and color or color_white
+	elseif color and IsColor(color) then
 		return color
 	end
-	
-	return color_white -- nothing set
 end
 hook.Add( "TTTScoreboardColorForPlayer", "EasyScoreboard_NameColors", EZS.AddNameColor )
 
