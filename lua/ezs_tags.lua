@@ -25,6 +25,7 @@ if CLIENT then
 	hook.Add( "EZS_AddRightClickFunction", "EZS_AddTag", AddTags )
 
 	hook.Add( "EZS_GetPlayerRankName", "EZS_OverrideTag", function( ply )
+		if ply.IsValid then return end
 		if ply.EZS_Tag then return ply.EZS_Tag end
 	end )
 
