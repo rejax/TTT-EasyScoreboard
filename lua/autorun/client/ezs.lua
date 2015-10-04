@@ -3,8 +3,7 @@ local columns = {
 		column_width = "dynamic", -- set to "dynamic" for dynamic sizing
 		dynamic_width_padding = 10,
 
-		color_ranks = true,
-
+		color_text = true,
 		draw_background = true,
 
 		default_text = "",
@@ -12,12 +11,11 @@ local columns = {
 		entries = {
 			superadmin = {
 				text = "S. Admin",
-				rank_color = "rainbow",
-				name_color = Color(0, 255, 0),
+				color = "rainbow",
 			},
 			["STEAM_0_1:123:456"] = {
 				text = "rejax",
-				rank_color = "rainbow",
+				color = "rainbow",
 			}
 		},
 
@@ -36,7 +34,7 @@ local columns = {
 		entries = {
 			superadmin = {
 				icon = "heart",
-				rank_color = Color(255, 0, 0),
+				color = Color(255, 0, 0),
 			},
 		},
 	},
@@ -75,6 +73,8 @@ local shiftables = {
 	nick = 0,
 }
 
+local enable_inheritance = false
+
 ------------------------------------------
 --[[ |		 END USER CONFIG 		| ]]--
 --[[ V  dont touch anything below   V ]]--
@@ -98,9 +98,7 @@ local column_widths = {}
 local internal_ignored_configs = {NameColors = true}
 local config = columns -- eh
 
-for id, conf in pairs(config) do
-	if internal_ignored_configs[id] then continue end
-
+local function install_meta(conf)
 	setmetatable(conf, default_column)
 
 	for name, tb in pairs(conf.entries) do
@@ -109,10 +107,18 @@ for id, conf in pairs(config) do
 			setmetatable(tb, parent)
 			parent.__index = parent
 		end
+
 		if tb.icon then
 			local mat = Material("icon16/" .. tb.icon .. ".png")
 			tb._icon = mat
 		end
+	end
+end
+
+local function install_metas()
+	for id, conf in pairs(config) do
+		if internal_ignored_configs[id] then continue end
+		install_meta(conf)
 	end
 end
 
@@ -121,7 +127,34 @@ timer.Simple(0, function()
 	hook.Run("ezs_exp_columns", columns)
 	hook.Run("ezs_exp_order", order)
 	hook.Run("ezs_exp_names", config_names)
+
+	install_metas()
 end) -- wait for other scripts to load
+
+if enable_inheritance then
+	gameevent.Listen("player_connect")
+	hook.Add("player_connect", "ezs-listen4connections", function(data)
+		local steamid = data.networkid
+		timer.Simple(1, function()
+			local ply
+			for _, p in pairs(player.GetAll()) do
+				if p:SteamID() == steamid then ply = p break end
+			end
+
+			if not ply then return end
+
+			local rank = ply:GetNWString("usergroup")
+
+			for name, col in pairs(config) do
+				local entry = col.entries[steamid]
+				if entry and col.entries[rank] then
+					entry.parent = col.entries[rank]
+					install_meta(entry)
+				end
+			end
+		end)
+	end)
+end
 
 local function getRank(ply)
 	return ply:GetUserGroup()
@@ -164,11 +197,11 @@ local function getColor(index)
 end
 
 local function getColumnTextColor(ply, col_index)
-	if not config[col_index].color_ranks then return end
+	if not config[col_index].color_text then return end
 	local col = getColumn(ply, col_index)
 
 	local alt = hook.Run("ezs_GetColumnColorForPlayer", ply, col_index)
-	return alt or (col and getColor(col.rank_color)) or color_white
+	return alt or (col and getColor(col.text_color)) or color_white
 end
 
 local function getNameColor(ply)
@@ -359,4 +392,4 @@ local function onRequestNameColor(ply)
 end
 hook.Add("TTTScoreboardColorForPlayer", "ezs colors", onRequestNameColor)
 
-concommand.Add( "ezs_refreshscoreboard", function() gamemode.Call( "ScoreboardCreate" ) end )
+concommand.Add("ezs_refreshscoreboard", function() gamemode.Call("ScoreboardCreate") end)
