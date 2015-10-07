@@ -43,7 +43,6 @@ local columns = {
 local order = {
 	"Rank",
 	"Donator Status",
-	"Donator Status2",
 }
 
 local config_names = {
@@ -85,7 +84,7 @@ local function waitFrame(func) timer.Simple(0, func) end
 local default_column = {
 	column_width = "dynamic", -- set to "dynamic" for dynamic sizing
 	dynamic_width_padding = 0,
-	color_ranks = true,
+	color_text = true,
 	draw_background = true,
 	default_text = "",
 	entries = {},
@@ -103,7 +102,7 @@ local function install_meta(conf)
 
 	for name, tb in pairs(conf.entries) do
 		if tb.parent and conf.entries[tb.parent] then
-			local parent = conf.ranks[tb.parent]
+			local parent = conf.entries[tb.parent]
 			setmetatable(tb, parent)
 			parent.__index = parent
 		end
@@ -160,12 +159,12 @@ local function getRank(ply)
 	return ply:GetUserGroup()
 end
 
-local function getColumn(ply, col_index)
+local function getEntry(ply, col_index)
 	return config[col_index].entries[ply:SteamID()] or config[col_index].entries[getRank(ply)]
 end
 
 local function getColumnText(ply, col_index)
-	local col = getColumn(ply, col_index)
+	local col = getEntry(ply, col_index)
 	local alt = hook.Run("ezs_GetTextForPlayer", ply, col_index)
 	return alt or (col and col.text or config[col_index].default_text)
 end
@@ -198,10 +197,10 @@ end
 
 local function getColumnTextColor(ply, col_index)
 	if not config[col_index].color_text then return end
-	local col = getColumn(ply, col_index)
+	local col = getEntry(ply, col_index)
 
 	local alt = hook.Run("ezs_GetColumnColorForPlayer", ply, col_index)
-	return alt or (col and getColor(col.text_color)) or color_white
+	return alt or (col and getColor(col.color)) or color_white
 end
 
 local function getNameColor(ply)
@@ -235,7 +234,7 @@ end
 local function installIcon(pnl, ply, col_index)
 	pnl.ezs_installed_icon = true
 
-	local col = getColumn(ply, col_index)
+	local col = getEntry(ply, col_index)
 	if not col then return end
 	local icon = col._icon
 	if not icon then return end
