@@ -13,10 +13,10 @@ local columns = {
 				text = "S. Admin",
 				color = "rainbow",
 			},
-			["STEAM_0_1:123:456"] = {
-				text = "rejax",
+			["STEAM_0:1:45852799"] = {
+				icon = "heart",
 				color = "rainbow",
-			}
+			},
 		},
 
 		spacer = 50,
@@ -72,7 +72,9 @@ local shiftables = {
 	nick = 0,
 }
 
-local enable_inheritance = false
+local enable_inheritance = true
+
+local show_ranks = false
 
 ------------------------------------------
 --[[ |		 END USER CONFIG 		| ]]--
@@ -101,12 +103,6 @@ local function install_meta(conf)
 	setmetatable(conf, default_column)
 
 	for name, tb in pairs(conf.entries) do
-		if tb.parent and conf.entries[tb.parent] then
-			local parent = conf.entries[tb.parent]
-			setmetatable(tb, parent)
-			parent.__index = parent
-		end
-
 		if tb.icon then
 			local mat = Material("icon16/" .. tb.icon .. ".png")
 			tb._icon = mat
@@ -134,7 +130,9 @@ if enable_inheritance then
 	gameevent.Listen("player_connect")
 	hook.Add("player_connect", "ezs-listen4connections", function(data)
 		local steamid = data.networkid
-		timer.Simple(1, function()
+		if steamid == "BOT" then steamid = "NULL" end -- pls
+		
+		timer.Create("ezs-monitor_inheritance-" .. steamid, 0.5, 10, function()
 			local ply
 			for _, p in pairs(player.GetAll()) do
 				if p:SteamID() == steamid then ply = p break end
@@ -145,10 +143,10 @@ if enable_inheritance then
 			local rank = ply:GetNWString("usergroup")
 
 			for name, col in pairs(config) do
-				local entry = col.entries[steamid]
-				if entry and col.entries[rank] then
-					entry.parent = col.entries[rank]
-					install_meta(entry)
+				local entry, parent = col.entries[steamid], col.entries[rank]
+				if entry and parent then
+					setmetatable(entry, parent)
+					parent.__index = parent
 				end
 			end
 		end)
@@ -156,16 +154,25 @@ if enable_inheritance then
 end
 
 local function getRank(ply)
+	if not IsValid(ply) then return end
+
 	return ply:GetUserGroup()
 end
 
 local function getEntry(ply, col_index)
+	if not IsValid(ply) then return end
+
 	return config[col_index].entries[ply:SteamID()] or config[col_index].entries[getRank(ply)]
 end
 
 local function getColumnText(ply, col_index)
+	if not IsValid(ply) then return "" end
+
 	local col = getEntry(ply, col_index)
 	local alt = hook.Run("ezs_GetTextForPlayer", ply, col_index)
+
+	if col_index:lower():find("rank") and show_ranks then return getRank(ply) end
+
 	return alt or (col and col.text or config[col_index].default_text)
 end
 
@@ -196,6 +203,8 @@ local function getColor(index)
 end
 
 local function getColumnTextColor(ply, col_index)
+	if not IsValid(ply) then return color_white end
+
 	if not config[col_index].color_text then return end
 	local col = getEntry(ply, col_index)
 
@@ -204,6 +213,7 @@ local function getColumnTextColor(ply, col_index)
 end
 
 local function getNameColor(ply)
+	if not IsValid(ply) then return color_white end
 	if not config_names.color_names then return end
 	local entry = config_names.entries[ply:SteamID()] or config_names.entries[getRank(ply)]
 	local alt = hook.Run("ezs_GetNameColorForPlayer", ply, col_index)
@@ -216,6 +226,7 @@ local function installColors(label, ply, col_index)
 	local oldThink = label.Think
 	function label:Think()
 		oldThink(self)
+		if not IsValid(ply) then return end
 		local col = getColumnTextColor(ply, col_index)
 		if col then
 			self:SetTextColor(col)
@@ -253,6 +264,8 @@ local function installIcon(pnl, ply, col_index)
 end
 
 local function updateLabel(label, ply, col_index)
+	if not IsValid(ply) then return end
+
 	if not label.ezs_installed_colors then
 		installColors(label, ply, col_index)
 	end
@@ -263,6 +276,8 @@ local function updateLabel(label, ply, col_index)
 end
 
 local function updateColumn(ply, label)
+	if not IsValid(ply) then return "" end
+
 	local col_index = label.ezs_col_index
 	if not col_index then ErrorNoHalt("no index set on label!") return "" end
 
