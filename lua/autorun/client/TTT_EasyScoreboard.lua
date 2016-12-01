@@ -13,7 +13,7 @@ EZS.Ranks["admin"] = { name = "Admin", color = Color( 150, 100, 100 ), admin = t
 EZS.Ranks["donator"] = { name = "Donator", color = Color( 100, 200, 100 ), admin = false }
 
 -- it would be nice if you left this in :)
-EZS.Ranks["STEAM_0:1:45852799"] = { name = "rejax", namecolor = Color( 100, 200, 100 ), color = color_white, icon = "bug", admin = false }
+EZS.Ranks["STEAM_0:1:45852799"] = { namecolor = "rainbow", icon = "bug", admin = false }
 
 -- label enable on the top? what should it say?
 EZS.CreateRankLabel = { enabled = true, text = "Rank" } 
