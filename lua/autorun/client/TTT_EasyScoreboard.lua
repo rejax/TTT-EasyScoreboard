@@ -89,10 +89,10 @@ EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
 			{
 				["Mute"] = { func = function( ply )
 					RunConsoleCommand( "ulx", "mute", ply:Nick():gsub( ";", "" ) )
-				end, icon = "icon16/pill.png" },
+				end, icon = "icon16/keyboard_delete.png" },
 				["Un-Mute"] = { func = function( ply )
 					RunConsoleCommand( "ulx", "unmute", ply:Nick():gsub( ";", "" ) )
-				end, icon = "icon16/pill.png" },
+				end, icon = "icon16/keyboard_add.png" },
 			},
 			
 			{
@@ -107,10 +107,10 @@ EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
 			{
 				["Goto"] = { func = function( ply )
 					RunConsoleCommand( "ulx", "goto", ply:Nick():gsub( ";", "" ) )
-				end, icon = "icon16/sound_mute.png" },
+				end, icon = "icon16/arrow_right.png" },
 				["Bring"] = { func = function( ply )
 					RunConsoleCommand( "ulx", "bring", ply:Nick():gsub( ";", "" ) )
-				end, icon = "icon16/sound.png" },
+				end, icon = "icon16/arrow_left.png" },
 			},
 			
 			_icon = "icon16/shield.png",
