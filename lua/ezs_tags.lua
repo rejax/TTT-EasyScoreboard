@@ -41,9 +41,11 @@ local tags = {}
 util.AddNetworkString( "EZS_PlayerTag" )
 
 local function UpdateTag( ply, initial )
+	local tag = ply.EZS_Tag or "remove"
+
 	net.Start( "EZS_PlayerTag" )
 		net.WriteEntity( ply )
-		net.WriteString( ply.EZS_Tag )
+		net.WriteString( tag )
 	net.Broadcast()
 	
 	if initial then return end
@@ -55,7 +57,6 @@ net.Receive( "EZS_PlayerTag", function( _, admin )
 	local ply = net.ReadEntity()
 	local str = net.ReadString()
 	
-	-- fuck off we're doing it like this
 	if str == "remove" then ply:SetPData("ezs_tag", nil) end
 	ply.EZS_Tag = str
 	UpdateTag( ply )
