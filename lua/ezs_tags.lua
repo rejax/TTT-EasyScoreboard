@@ -1,4 +1,4 @@
--- PLACE ME @ LUA/AUTORUN/ezs_tags.lua
+-- PLACE ME @ LUA/ezs_tags.lua
 
 if CLIENT then
 	local function AddTags( funcs )
