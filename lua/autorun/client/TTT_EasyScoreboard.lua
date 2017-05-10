@@ -25,7 +25,7 @@ EZS.DefaultLabel = ""
 EZS.HideBackground = false
 
 -- Width of the rank columns
-EZS.ColumnWidth = 50
+EZS.ColumnWidth = 125
 
 -- the number of columns (not pixels!!!!!!!) to shift to the left
 EZS.ShiftLeft = 0
@@ -36,8 +36,11 @@ EZS.ShiftOthers = 200
 -- Show icon as well as rank text? (if possible)
 EZS.ShowIconsWithRanks = true
 
+-- Fix the icon next to the rank? (Horizontal align)
+EZS.FixedIcon = true
+
 -- Should the icon shift to the left to accomodate the label?
-EZS.ShiftIconsWithLabels = true
+EZS.ShiftIconsWithLabels = false
 
 -- if ^ is false, where should the icons go (like EZS.ShiftLeft)?
 EZS.ShiftIconsLeft = 0
@@ -57,11 +60,19 @@ EZS.AllowNamesToHaveDynamicColor = true
 EZS.DynamicColors = {}
 
 EZS.DynamicColors.rainbow = function( ply )
-	local frequency, time = .5, RealTime()
-	local red = math.sin( frequency * time ) * 127 + 128
-	local green = math.sin( frequency * time + 2 ) * 127 + 128
-	local blue = math.sin( frequency * time + 4 ) * 127 + 128
-	return Color( red, green, blue )
+	if ply:IsUserGroup('owner') then
+		local frequency, time = 12, RealTime()
+		local red = math.sin( (frequency * time )) * 127 + 128
+		local green = math.sin( frequency *time + 2 ) * 127 + 128
+		local blue = math.sin( frequency * time + 4 ) * 127 + 128
+		return Color( red, green, blue )
+	else
+		local frequency, time = .5, RealTime()
+		local red = math.sin( frequency * time ) * 127 + 128
+		local green = math.sin( frequency * time + 2 ) * 127 + 128
+		local blue = math.sin( frequency * time + 4 ) * 127 + 128
+		return Color( red, green, blue )
+	end
 end
 
 EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
@@ -233,20 +244,19 @@ function EZS.AddRankLabel( sb )
 
 	sb:AddColumn( heading, function( ply, label )
 		local rank = EZS.GetRank( ply )
+		label:SetName( "EZS" )
 		
 		local ov_name = hook.Run( "EZS_GetPlayerRankName", ply )
 		if ov_name and not rank then return ov_name end
 		
 		if not rank and not ov_name then return EZS.DefaultLabel end
 		
-		label:SetName( "EZS" )
-		
 		if rank.offset then
 			local px, py = label:GetPos()
 			label:SetPos( px - rank.offset, py )
 		end
 	
-		if rank.icon and not rank.iconmat:IsError() then
+		if rank.icon and not rank.iconmat:IsError() and not EZS.FixedIcon then
 			label.Paint = function( s, w, h )
 				surface.DisableClipping( true )
 					surface.SetDrawColor( color_white )
@@ -288,6 +298,29 @@ function EZS.AddRankLabel( sb )
 		if ov_name then return ov_name end
 		return rank.name or ""
 	end, EZS.ColumnWidth )
+
+	if EZS.FixedIcon then
+		sb:AddColumn("", function( ply, label )
+			local rank = EZS.GetRank( ply )
+			label:SetName("EZS-icon")
+			if not rank then return "" end
+
+			if rank.icon and not rank.iconmat:IsError() then
+				label.Paint = function( s, w, h )
+					surface.DisableClipping( true )
+						surface.SetDrawColor( color_white )
+						surface.SetMaterial( rank.iconmat )
+						
+						local posx = (rank.iconmat:Width()/2) + EZS.ColumnWidth / 4
+						
+						surface.DrawTexturedRect(posx, -1, rank.iconmat:Width(), rank.iconmat:Height() )
+					surface.DisableClipping( false )
+				end
+			end
+
+			return " "
+		end, EZS.ColumnWidth )
+	end
 	
 	EZS.HandleShift( sb )
 	
