@@ -60,19 +60,11 @@ EZS.AllowNamesToHaveDynamicColor = true
 EZS.DynamicColors = {}
 
 EZS.DynamicColors.rainbow = function( ply )
-	if ply:IsUserGroup('owner') then
-		local frequency, time = 12, RealTime()
-		local red = math.sin( (frequency * time )) * 127 + 128
-		local green = math.sin( frequency *time + 2 ) * 127 + 128
-		local blue = math.sin( frequency * time + 4 ) * 127 + 128
-		return Color( red, green, blue )
-	else
-		local frequency, time = .5, RealTime()
-		local red = math.sin( frequency * time ) * 127 + 128
-		local green = math.sin( frequency * time + 2 ) * 127 + 128
-		local blue = math.sin( frequency * time + 4 ) * 127 + 128
-		return Color( red, green, blue )
-	end
+	local frequency, time = .5, RealTime()
+	local red = math.sin( frequency * time ) * 127 + 128
+	local green = math.sin( frequency * time + 2 ) * 127 + 128
+	local blue = math.sin( frequency * time + 4 ) * 127 + 128
+	return Color( red, green, blue )
 end
 
 EZS.RightClickFunction = { enabled = true, ask_admins = true, functions = {
