@@ -21,6 +21,9 @@ EZS.CreateRankLabel = { enabled = true, text = "Rank" }
 -- what to show when the player doesnt have an entry
 EZS.DefaultLabel = ""
 
+-- create a button to sort the scoreboard by useres ranks
+EZS.SortByRank = true
+
 -- sadly there is no way to shift the background bar over as TTT draws it manually :c
 EZS.HideBackground = false
 
@@ -291,6 +294,24 @@ function EZS.AddRankLabel( sb )
 		return rank.name or ""
 	end, EZS.ColumnWidth )
 
+	if EZS.SortByRank then
+		sb:AddFakeColumn( EZS.CreateRankLabel.enabled and EZS.CreateRankLabel.text or "Rank", nil, nil, "rank", function(ply1, ply2)
+			if ply1:CheckGroup(ply2:GetUserGroup()) then
+				if ply1:IsUserGroup(ply2:GetUserGroup()) then
+					return 0 --Sorts by username automatically if returned 0
+				end
+				return 1
+			end
+			if not ply2:CheckGroup(ply1:GetUserGroup()) then
+				--If neither group inherits the other, sort the non-linear groups alphabetically
+				if string.lower(EZS.GetRank(ply1)) > string.lower(EZS.GetRank(ply2)) then
+					return 1
+				end
+			end
+			return -1
+		end)
+	end
+	
 	if EZS.FixedIcon then
 		sb:AddColumn("", function( ply, label )
 			local rank = EZS.GetRank( ply )
