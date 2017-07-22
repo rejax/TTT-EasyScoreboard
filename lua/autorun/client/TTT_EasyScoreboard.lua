@@ -294,7 +294,7 @@ function EZS.AddRankLabel( sb )
 		return rank.name or ""
 	end, EZS.ColumnWidth )
 
-	if EZS.SortByRank then
+	if EZS.SortByRank and ulx then --This relies on ULX/ULib functions
 		sb:AddFakeColumn( EZS.CreateRankLabel.enabled and EZS.CreateRankLabel.text or "Rank", nil, nil, "rank", function(ply1, ply2)
 			if ply1:CheckGroup(ply2:GetUserGroup()) then
 				if ply1:IsUserGroup(ply2:GetUserGroup()) then
