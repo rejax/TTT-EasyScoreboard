@@ -292,26 +292,22 @@ function EZS.AddRankLabel( sb )
 
 		if ov_name then return ov_name end
 		return rank.name or ""
-	end, EZS.ColumnWidth )
-
-	if EZS.SortByRank and ulx then --This relies on ULX/ULib functions
-		sb:AddFakeColumn( EZS.CreateRankLabel.enabled and EZS.CreateRankLabel.text or "Rank", nil, nil, "rank", function(ply1, ply2)
-			if ply1:CheckGroup(ply2:GetUserGroup()) then
-				if ply1:IsUserGroup(ply2:GetUserGroup()) then
-					return 0 --Sorts by username automatically if returned 0
-				end
+	end, EZS.ColumnWidth, "rank", function(ply1, ply2)
+		if ply1:CheckGroup(ply2:GetUserGroup()) then
+			if ply1:IsUserGroup(ply2:GetUserGroup()) then
+				return 0 --Sorts by username automatically if returned 0
+			end
+			return 1
+		end
+		if not ply2:CheckGroup(ply1:GetUserGroup()) then
+			--If neither group inherits the other, sort the non-linear groups alphabetically
+			if string.lower(EZS.GetRank(ply1)) > string.lower(EZS.GetRank(ply2)) then
 				return 1
 			end
-			if not ply2:CheckGroup(ply1:GetUserGroup()) then
-				--If neither group inherits the other, sort the non-linear groups alphabetically
-				if string.lower(EZS.GetRank(ply1)) > string.lower(EZS.GetRank(ply2)) then
-					return 1
-				end
-			end
-			return -1
-		end)
-	end
-	
+		end
+		return -1
+	end))
+
 	if EZS.FixedIcon then
 		sb:AddColumn("", function( ply, label )
 			local rank = EZS.GetRank( ply )
