@@ -306,7 +306,7 @@ function EZS.AddRankLabel( sb )
 			end
 		end
 		return -1
-	end))
+	end)
 
 	if EZS.FixedIcon then
 		sb:AddColumn("", function( ply, label )
