@@ -21,7 +21,7 @@ EZS.CreateRankLabel = { enabled = true, text = "Rank" }
 -- what to show when the player doesnt have an entry
 EZS.DefaultLabel = ""
 
--- create a button to sort the scoreboard by users' ranks
+-- Allow clicking on the "Rank" column title to sort players by rank from highest to lowest (or inverted)
 EZS.SortByRank = true
 
 -- sadly there is no way to shift the background bar over as TTT draws it manually :c
