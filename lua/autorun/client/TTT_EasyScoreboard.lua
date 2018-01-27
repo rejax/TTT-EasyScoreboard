@@ -293,6 +293,7 @@ function EZS.AddRankLabel( sb )
 		if ov_name then return ov_name end
 		return rank.name or ""
 	end, EZS.ColumnWidth, "rank", function(ply1, ply2)
+		if not EZS.SortByRank then return 0 end
 		if ply1:CheckGroup(ply2:GetUserGroup()) then
 			if ply1:IsUserGroup(ply2:GetUserGroup()) then
 				return 0 --Sorts by username automatically if returned 0
